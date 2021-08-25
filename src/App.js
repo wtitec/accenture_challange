@@ -4,6 +4,7 @@ import "./App.css";
 import styled from "styled-components";
 import { AccountBox } from "./components/accountBox";
 import Profile from "./components/profile/index";
+import Home from "./components/home/index";
 
 const AppContainer = styled.div`
   width: 100%;
@@ -19,10 +20,6 @@ function SingInUp() {
   return (
     <AccountBox />
   );
-}
-
-function About() {
-  return <h2>About</h2>;
 }
 
 // function Users() {
@@ -44,12 +41,12 @@ export default class App extends Component {
       <AppContainer>
         <Router>
           <Switch>
-            <Route exact path="/about">
-              <About />
+            <Route exact path="/">
+              <Home />
             </Route>
             <Route exact path="/profile">
               <Profile />
-              </Route>
+            </Route>
             <Route exact path="/login">
               <SingInUp />
             </Route>

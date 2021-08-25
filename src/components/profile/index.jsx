@@ -1,9 +1,9 @@
 import React, { useState, Component } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import { LoginForm} from "./loginForm";
+import { ProfileView } from "./ProfileView";
 import { AccountContext } from "./accountContext";
-import { SignupForm } from "./signupForm";
+import { Link } from 'react-router-dom';
 
 const BoxContainer = styled.div`
   width: 280px;
@@ -77,128 +77,156 @@ const InnerContainer = styled.div`
 `;
 
 const backdropVariants = {
-    expanded: {
-        width: "233%",
-        height: "1050px",
-        borderRadius: "20%",
-        transform: "rotate(60deg)",
-    },
-    collapsed: {
-        width: "160%",
-        height: "550px",
-        borderRadius: "50%",
-        transform: "rotate(60deg)",
-    },
+  expanded: {
+    width: "233%",
+    height: "1050px",
+    borderRadius: "20%",
+    transform: "rotate(60deg)",
+  },
+  collapsed: {
+    width: "160%",
+    height: "550px",
+    borderRadius: "50%",
+    transform: "rotate(60deg)",
+  },
 };
 
 const expandingTransition = {
-    type: "spring",
-    duration: 2.3,
-    stiffness: 30,
+  type: "spring",
+  duration: 2.3,
+  stiffness: 30,
 };
 
+const LogoutButton = styled.div`
+  width: 25px;
+    height: 25px;
+    position: absolute;
+    display: flex;
+    z-index: 1;
+    top: 15px;
+    right: 20px;
+    background: rgba(255, 255, 255,0.5);
+    display: block;
+    text-align: center;
+    border-radius: 15px;
+    cursor: pointer;
+`;
 
 
 
 
-const ProtectedRoute = ({isEnabled}) => {
-    const [isExpanded, setExpanded] = useState(false);
-    const [active, setActive] = useState("signin");
-  
-    const playExpandingAnimation = () => {
-      setExpanded(true);
-      setTimeout(() => {
-        setExpanded(false);
-      }, expandingTransition.duration * 1000 - 1500);
-    };
-  
-    const switchToSignup = () => {
-      playExpandingAnimation();
-      setTimeout(() => {
-        setActive("signup");
-      }, 400);
-    };
-  
-    const switchToSignin = () => {
-      playExpandingAnimation();
-      setTimeout(() => {
-        setActive("signin");
-      }, 400);
-    };
 
-    const contextValue = { switchToSignup, switchToSignin };
+const ProtectedRoute = ({ isEnabled }) => {
+  const [isExpanded, setExpanded] = useState(false);
+  const [setActive] = useState("signin");
 
-    return isEnabled === true ?
-        <AccountContext.Provider value={contextValue}>
-            <BoxContainer>
-                <TopContainer>
-                    <BackDrop
-                        initial={false}
-                        animate={isExpanded ? "expanded" : "collapsed"}
-                        variants={backdropVariants}
-                        transition={expandingTransition}
-                    />
-                    {active === "signin" && (
-                        <HeaderContainer>
-                            <HeaderText>Profile</HeaderText>
-                            <SmallText>Willian Takashi Ishida</SmallText>
-                        </HeaderContainer>
-                    )}
-                    {active === "signup" && (
-                        <HeaderContainer>
-                            <HeaderText>Create</HeaderText>
-                            <HeaderText>Account</HeaderText>
-                            <SmallText>Please sign-up to continue!</SmallText>
-                        </HeaderContainer>
-                    )}
-                </TopContainer>
-                <InnerContainer>
-                    {active === "signin" && <LoginForm />}
-                    {active === "signup" && <SignupForm />}
-                </InnerContainer>
-            </BoxContainer>
-        </AccountContext.Provider>
-        : ""
+  const playExpandingAnimation = () => {
+    setExpanded(true);
+    setTimeout(() => {
+      setExpanded(false);
+    }, expandingTransition.duration * 1000 - 1500);
+  };
+
+  const switchToSignup = () => {
+    playExpandingAnimation();
+    setTimeout(() => {
+      setActive("signup");
+    }, 400);
+  };
+
+  const switchToSignin = () => {
+    playExpandingAnimation();
+    setTimeout(() => {
+      setActive("signin");
+    }, 400);
+  };
+
+  const logout = ()=>{
+    sessionStorage.clear();
+  }
+
+  const contextValue = { switchToSignup, switchToSignin };
+
+  return isEnabled === true ?
+    <AccountContext.Provider value={contextValue}>
+      <BoxContainer>
+        <TopContainer>
+
+        <Link to="/login" style={{ textDecoration: "none" }}><LogoutButton onClick={logout}>X</LogoutButton></Link>
+          
+
+          <BackDrop
+            initial={false}
+            animate={isExpanded ? "expanded" : "collapsed"}
+            variants={backdropVariants}
+            transition={expandingTransition}
+          />
+          <HeaderContainer>
+            <HeaderText>Profile</HeaderText>
+            <SmallText>Information</SmallText>
+          </HeaderContainer>
+        </TopContainer>
+        <InnerContainer>
+          <ProfileView />
+        </InnerContainer>
+      </BoxContainer>
+    </AccountContext.Provider>
+    : ""
 };
 
 export default class Profile extends Component {
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            pageview: false,
-            dados: {
-                nome: "Willian"
-            }
-        }
+  constructor(props) {
+    super(props);
+    this.state = {
+      pageview: false,
+      data: {}
+    }
+  }
+
+  async checkAuth() {
+    let token = sessionStorage.getItem("token")
+    let requestOptions = {
+      method: "POST",
+      headers: { 'Authorization': `Bearer ${token}` },
+    };
+    const url = "https://49cdc2ddle.execute-api.sa-east-1.amazonaws.com/v1"
+    // const url = "http://api-antares.sa-east-1.elasticbeanstalk.com"
+    // const url = "http://93.188.161.212:6001"
+    // const url = "http://192.168.15.101:6001"
+
+    let auth = await fetch(`${url}/token-verify`, requestOptions)
+      .then(response => response.json())
+      .then(data => data.authorization)
+      .catch(() => {
+        return "error"
+      });
+
+    if (auth === "error") {
+      alert("Server error!")
+    } else if (auth === undefined) {
+      alert("Email or password is invalid! Try again.")
+    } else {
+      this.setState({ pageview: auth })
     }
 
-    async checkAuth() {
-        let token = sessionStorage.getItem("token")
-        let requestOptions = {
-            method: "POST",
-            headers: { 'Authorization': `Bearer ${token}` },
-        };
-        let auth = await fetch('http://192.168.15.101:6001/token-verify', requestOptions)
-            .then(response => response.json())
-            .then(data => data.authorization);
 
-        this.setState({ pageview: auth })
-        if (auth !== true) {
-            window.location.replace("/login");
-        }
+
+    if (auth !== true) {
+      window.location.replace("/login");
     }
+  }
 
-    componentDidMount() {
-        this.checkAuth();
-    }
+  componentDidMount() {
+    this.checkAuth();
+  }
 
-    render() {
-        const { pageview } = this.state
-        return (
-            <ProtectedRoute isEnabled={pageview} />
+  render() {
+    const { pageview } = this.state
+    return (
+      <ProtectedRoute isEnabled={pageview} />
 
 
-        )
-    }
+    )
+  }
 }
